@@ -14,20 +14,26 @@ phases:
       - ln -s $(which docker) /usr/local/bin/com.docker.cli
   pre_build:
     commands:
-      - echo Logging in to Docker Hub...
-      - docker login --username $DOCKERHUB_USERNAME --password $DOCKERHUB_PASSWORD
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - $(aws ecr get-login --region $THIS_REGION --no-include-email)
+      - docker pull ${REPOSITORY_URI}/${ECR_FRONTEND}:latest || true
+      - docker pull ${REPOSITORY_URI}/${ECR_BACKEND}:latest || true
 
   build:
     commands:
-      - echo Build started on `date`
+      - echo "Build started on $(date)"
+      - echo 'Building the Docker image...'  
       - docker/docker compose build
-      - echo "Tagging Docker image for Docker Hub"
+      - echo "Tagging Docker image for ECR"
       - docker images
-      - docker tag src_backend:latest ${DOCKERHUB_USERNAME}/docker-compose-ecs-sample_backend:${CODEBUILD_RESOLVED_SOURCE_VERSION}
-      - docker tag src_frontend:latest ${DOCKERHUB_USERNAME}/docker-compose-ecs-sample_frontend:${CODEBUILD_RESOLVED_SOURCE_VERSION}
-      - docker push ${DOCKERHUB_USERNAME}/docker-compose-ecs-sample_backend:${CODEBUILD_RESOLVED_SOURCE_VERSION}
-      - docker push ${DOCKERHUB_USERNAME}/docker-compose-ecs-sample_frontend:${CODEBUILD_RESOLVED_SOURCE_VERSION}
-  
+      - docker tag src_backend:latest ${ECR_BACKEND}:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - docker tag src_frontend:latest ${ECR_FRONTEND}:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - echo "Build completed on $(date)"
+      - docker images
   post_build:
     commands:
+      - echo 'Pushing the Docker images...'
+      - docker push ${ECR_BACKEND}:${CODEBUILD_RESOLVED_SOURCE_VERSION}
+      - docker push ${ECR_FRONTEND}:${CODEBUILD_RESOLVED_SOURCE_VERSION}
       - echo "build successful"
