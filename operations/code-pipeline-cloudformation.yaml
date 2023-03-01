@@ -15,11 +15,11 @@ Parameters:
     Default: docker-compose-ecs-sample
   GitHubBranch:
     Type: String
-    AllowedPattern: '[A-Za-z0-9-]+'
+    AllowedPattern: '[A-Za-z0-9-/]+'
     Default: main
-  DockerPullSecretsManagerArn:
-    Type: String
-    Description : ARN for Secrets Manager Stored Secret
+  # DockerPullSecretsManagerArn:
+  #   Type: String
+  #   Description : ARN for Secrets Manager Stored Secret
   
 
 Resources:
@@ -320,12 +320,24 @@ Resources:
         Image: 'aws/codebuild/standard:5.0'
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: DOCKERHUB_USERNAME
-            Type: SECRETS_MANAGER 
-            Value: !Sub ${DockerPullSecretsManagerArn}:username
-          - Name: DOCKERHUB_PASSWORD
-            Type: SECRETS_MANAGER
-            Value: !Sub ${DockerPullSecretsManagerArn}:password
+          # - Name: DOCKERHUB_USERNAME
+          #   Type: SECRETS_MANAGER 
+          #   Value: !Sub ${DockerPullSecretsManagerArn}:username
+          # - Name: DOCKERHUB_PASSWORD
+          #   Type: SECRETS_MANAGER
+          #   Value: !Sub ${DockerPullSecretsManagerArn}:password
+          - Name: REPOSITORY_URI
+            Type: PLAINTEXT
+            Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com"
+          - Name: ECR_FRONTEND
+            Type: PLAINTEXT
+            Value: !Ref EcrFrontend
+          - Name: ECR_BACKEND
+            Type: PLAINTEXT
+            Value: !Ref EcrBackend
+          - Name: THIS_REGION
+            Type: PLAINTEXT
+            Value: !Ref AWS::Region
 
   CodeBuildDeployProject:
     Type: 'AWS::CodeBuild::Project'
@@ -363,24 +375,19 @@ Resources:
         Image: 'aws/codebuild/standard:5.0'
         PrivilegedMode: true
         EnvironmentVariables:
-          - Name: DOCKERHUB_USERNAME
-            Type: SECRETS_MANAGER 
-            Value: !Sub ${DockerPullSecretsManagerArn}:username
-          - Name: DOCKERHUB_PASSWORD
-            Type: SECRETS_MANAGER
-            Value: !Sub ${DockerPullSecretsManagerArn}:password
-          - Name: DOCKER_PULL_SECRETS_MANAGER
-            Type: PLAINTEXT
-            Value: !Ref DockerPullSecretsManagerArn
+          # - Name: DOCKERHUB_USERNAME
+          #   Type: SECRETS_MANAGER 
+          #   Value: !Sub ${DockerPullSecretsManagerArn}:username
+          # - Name: DOCKERHUB_PASSWORD
+          #   Type: SECRETS_MANAGER
+          #   Value: !Sub ${DockerPullSecretsManagerArn}:password
+          # - Name: DOCKER_PULL_SECRETS_MANAGER
+          #   Type: PLAINTEXT
+          #   Value: !Ref DockerPullSecretsManagerArn
           - Name: PROJECT_NAME
             Type: PLAINTEXT
             Value: !Ref ProjectName
-          - Name: REPOSITORY_URI
-            Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/"
-          - Name: ECR_FRONTEND
-            Value: !Ref EcrFrontend
-          - Name: ECR_BACKEND
-            Value: !Ref EcrBackend
+
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -404,7 +411,7 @@ Resources:
               Configuration:
                 Owner: !Ref GitHubOwner
                 Repo: !Ref GitHubRepository
-                Branch: main
+                Branch: !Ref GitHubBranch
                 PollForSourceChanges: false
                 OAuthToken: '{{resolve:secretsmanager:github-oauth-token:SecretString:GITHUB_ACCESS_TOKEN}}'
               OutputArtifacts:
@@ -425,21 +432,21 @@ Resources:
               OutputArtifacts:
                 - Name: BuildOutput
               RunOrder: 1
-        - Name: Deploy
-          Actions:
-            - Name: Deploy
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Version: '1'
-                Provider: CodeBuild
-              Configuration:
-                ProjectName: !Ref CodeBuildDeployProject
-              InputArtifacts:
-                - Name: SourceCode
-              OutputArtifacts:
-                - Name: DeployOutput
-              RunOrder: 1
+        # - Name: Deploy
+        #   Actions:
+        #     - Name: Deploy
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Version: '1'
+        #         Provider: CodeBuild
+        #       Configuration:
+        #         ProjectName: !Ref CodeBuildDeployProject
+        #       InputArtifacts:
+        #         - Name: SourceCode
+        #       OutputArtifacts:
+        #         - Name: DeployOutput
+        #       RunOrder: 1
   
   CodePipelineWebhook:
     Type: 'AWS::CodePipeline::Webhook'
