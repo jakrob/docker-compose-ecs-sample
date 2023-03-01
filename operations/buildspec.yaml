@@ -17,7 +17,6 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws --version
       - aws ecr get-login-password --region $THIS_REGION | docker login --username AWS --password-stdin ${REPOSITORY_URI}
-      - $(aws ecr get-login --region $THIS_REGION --no-include-email)
       - docker pull ${REPOSITORY_URI}/${ECR_FRONTEND}:latest || true
       - docker pull ${REPOSITORY_URI}/${ECR_BACKEND}:latest || true
 
