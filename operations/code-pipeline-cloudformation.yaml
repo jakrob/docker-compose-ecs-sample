@@ -17,9 +17,9 @@ Parameters:
     Type: String
     AllowedPattern: '[A-Za-z0-9-/]+'
     Default: main
-  # DockerPullSecretsManagerArn:
-  #   Type: String
-  #   Description : ARN for Secrets Manager Stored Secret
+  DockerPullSecretsManagerArn:
+    Type: String
+    Description : ARN for Secrets Manager Stored Secret
   
 
 Resources:
@@ -320,12 +320,12 @@ Resources:
         Image: 'aws/codebuild/standard:5.0'
         PrivilegedMode: true
         EnvironmentVariables:
-          # - Name: DOCKERHUB_USERNAME
-          #   Type: SECRETS_MANAGER 
-          #   Value: !Sub ${DockerPullSecretsManagerArn}:username
-          # - Name: DOCKERHUB_PASSWORD
-          #   Type: SECRETS_MANAGER
-          #   Value: !Sub ${DockerPullSecretsManagerArn}:password
+          - Name: DOCKERHUB_USERNAME
+            Type: SECRETS_MANAGER 
+            Value: !Sub ${DockerPullSecretsManagerArn}:username
+          - Name: DOCKERHUB_PASSWORD
+            Type: SECRETS_MANAGER
+            Value: !Sub ${DockerPullSecretsManagerArn}:password
           - Name: REPOSITORY_URI
             Type: PLAINTEXT
             Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com"
