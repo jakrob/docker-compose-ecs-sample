@@ -4,7 +4,7 @@ Description: This template will launch the CI/CD Pipeline for the Docker-AWS Wor
 Parameters:
   ProjectName:
     Type: String
-    Default: docker-compose-ecs-sample
+    Default: docker-compose-ecs-cluster
   GitHubOwner:
     Type: String
     AllowedPattern: '[A-Za-z0-9-]+'
@@ -157,6 +157,7 @@ Resources:
                   - 'logs:DescribeLogGroup'
                   - 'logs:FilterLogEvents'
                   - 'logs:DeleteLogGroup'
+                  - logs:TagResource
                 Resource:
                   - '*'
               - Sid: S3GetObjectPolicy
